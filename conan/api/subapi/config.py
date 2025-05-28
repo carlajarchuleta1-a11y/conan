@@ -40,7 +40,7 @@ class ConfigAPI:
         # TODO: We probably want to split this into git-folder-http cases?
         from conan.internal.api.config.config_installer import configuration_install
         cache_folder = self.conan_api.cache_folder
-        requester = self.conan_api.remotes.requester
+        requester = self.conan_api._requester # noqa
         configuration_install(cache_folder, requester, path_or_url, verify_ssl, config_type=config_type, args=args,
                               source_folder=source_folder, target_folder=target_folder)
         self.conan_api.reinit()

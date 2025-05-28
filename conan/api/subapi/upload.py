@@ -115,7 +115,7 @@ class UploadAPI:
             output.info("No backup sources files to upload")
             return files
 
-        requester = self.conan_api.remotes.requester
+        requester = self.conan_api._requester # noqa
         uploader = FileUploader(requester, verify=True, config=config, source_credentials=True)
         # TODO: For Artifactory, we can list all files once and check from there instead
         #  of 1 request per file, but this is more general

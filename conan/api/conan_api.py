@@ -21,9 +21,14 @@ from conan.api.subapi.remove import RemoveAPI
 from conan.api.subapi.search import SearchAPI
 from conan.api.subapi.upload import UploadAPI
 from conan.errors import ConanException
+from conan.internal.api.remotes.localdb import LocalDB
+from conan.internal.cache.cache import PkgCache
 from conan.internal.paths import get_conan_user_home
 from conan.internal.api.migrations import ClientMigrator
 from conan.internal.model.version_range import validate_conan_version
+from conan.internal.rest.auth_manager import ConanApiAuthManager
+from conan.internal.rest.conan_requester import ConanRequester
+from conan.internal.rest.remote_manager import RemoteManager
 
 
 class ConanAPI:
@@ -51,7 +56,7 @@ class ConanAPI:
 
         # This API is depended upon by the subsequent ones, it should be initialized first
         self.config = ConfigAPI(self)
-
+        self._init_collaborators()
         self.remotes = RemotesAPI(self)
         self.command = CommandAPI(self)
         # Search recipes by wildcard and packages filtering by configuration
@@ -75,12 +80,21 @@ class ConanAPI:
 
         _check_conan_version(self)
 
+    def _init_collaborators(self):
+        # Wraps an http_requester to inject proxies, certs, etc
+        self._requester = ConanRequester(self.config.global_conf, self.home_folder)
+        localdb = LocalDB(self.home_folder)
+        auth_manager = ConanApiAuthManager(self._requester, self.home_folder, localdb,
+                                           self.config.global_conf)
+        self._pkg_cache = PkgCache(self.home_folder, self.config.global_conf)
+        self._remote_manager = RemoteManager(self._pkg_cache, auth_manager, self.home_folder)
+
     def reinit(self):
         """
         Reinitialize the Conan API. This is useful when the configuration changes.
         """
         self.config.reinit()
-        self.remotes.reinit()
+        self._init_collaborators()
         self.local.reinit()
 
         _check_conan_version(self)

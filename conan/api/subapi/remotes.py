@@ -8,8 +8,10 @@ from conan.api.model import Remote, LOCAL_RECIPES_INDEX
 from conan.api.output import ConanOutput
 from conan.internal.cache.home_paths import HomePaths
 from conan.internal.conan_app import ConanBasicApp
+from conan.internal.rest.auth_manager import ConanApiAuthManager
 from conan.internal.rest.conan_requester import ConanRequester
 from conan.internal.rest.remote_credentials import RemoteCredentials
+from conan.internal.rest.remote_manager import RemoteManager
 from conan.internal.rest.rest_client_local_recipe_index import add_local_recipes_index_remote, \
     remove_local_recipes_index_remote
 from conan.internal.api.remotes.localdb import LocalDB
@@ -34,11 +36,6 @@ class RemotesAPI:
         self._conan_api = conan_api
         self._home_folder = conan_api.home_folder
         self._remotes_file = HomePaths(self._home_folder).remotes_path
-        # Wraps an http_requester to inject proxies, certs, etc
-        self._requester = ConanRequester(self._conan_api.config.global_conf, self._conan_api.cache_folder)
-
-    def reinit(self):
-        self._requester = ConanRequester(self._conan_api.config.global_conf, self._conan_api.cache_folder)
 
     def list(self, pattern=None, only_enabled=True):
         """
@@ -280,10 +277,6 @@ class RemotesAPI:
         app.remote_manager.check_credentials(remote, force)
         user, token, _ = localdb.get_login(remote.url)
         return user
-
-    @property
-    def requester(self):
-        return self._requester
 
 
 def _load(remotes_file):
